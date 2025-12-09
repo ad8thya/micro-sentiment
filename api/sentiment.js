@@ -1,13 +1,21 @@
-// api/sentiment.js -- parse probe
+// api/sentiment.js -- raw body debug probe
 export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
-
-  let body = "";
-  for await (const chunk of req) body += chunk;
+  // Accept any method for debugging
+  let raw = "";
   try {
-    req.body = body ? JSON.parse(body) : {};
+    for await (const chunk of req) raw += chunk;
   } catch (err) {
-    return res.status(400).json({ error: "Invalid JSON" });
+    // if reading stream fails
+    return res.status(500).json({ error: "stream error", detail: String(err) });
   }
-  return res.status(200).json({ received: req.body });
+
+  // return everything so we can see what actually arrived
+  res.setHeader("Content-Type", "application/json");
+  return res.status(200).json({
+    ok: true,
+    method: req.method || null,
+    headers: req.headers || null,
+    rawBody: raw,
+    length: raw ? raw.length : 0
+  });
 }
